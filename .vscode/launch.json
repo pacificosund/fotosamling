@@ -1,0 +1,16 @@
+{
+    "configurations": [
+        {
+            "name": "Deploy Cloud Function",
+            "type": "cloudcode.cloudfunctions",
+            "request": "launch",
+            "functionName": "httptest",
+            "gen": "GEN_2",
+            "revision": "1",
+            "entryPoint": "helloWorld",
+            "testInput": "helloWorld",
+            "region": "europe-west3",
+            "runtime": "python312"
+        }
+    ]
+}
