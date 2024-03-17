@@ -13,9 +13,9 @@ def display_images(request):
 
     # Extract bucket and prefix from request (consider adding validation)
     bucket_name = request.args.get('bucket_name')
-    prefix = request.args.get('prefix')
+    #prefix = request.args.get('prefix')
 
-    if not bucket_name or not prefix:
+    if not bucket_name:
         return 'Missing required parameters: bucket_name and prefix', 400
 
     # Create a Storage client
@@ -25,7 +25,7 @@ def display_images(request):
     bucket = storage_client.get_bucket(bucket_name)
 
     # List blobs with the specified prefix
-    blobs = bucket.list_blobs(prefix=prefix)
+    blobs = bucket.list_blobs(prefix=None)
 
     # Build a list of blob names
     #blob_names = [blob.name for blob in blobs]
@@ -41,33 +41,23 @@ def display_images(request):
                 <body>
                 '''
 
-    html_output += '<table>'
+    #html_output += '<table>'
     row_count = 0
     images_per_row = 1  # Customize this as needed
 
     for blob in blobs:
-        if row_count == 0:
-            html_output += '<tr>'
-
+        
         # public_url = blob.generate_signed_url(
         #     version="v4", expiration=600, method="GET"
         # )  # 10 minute expiration
         #public_url = f'https://storage.googleapis.com/{bucket_name}/{blob.name}'
         public_url = blob.public_url
-        html_output += f'''<td><a href="{public_url}" download="{blob.name}">
+        html_output += f'''<div><a href="{public_url}" download="{blob.name}">
                             <img src="{public_url}" width="200"></a>
-                            </td>
+                            </div>
                         '''  # Customize image width
 
-        row_count += 1
-        if row_count >= images_per_row:
-            html_output += '</tr>'
-            row_count = 0
-
-    if row_count > 0:  # Close the last row if open
-        html_output += '</tr>'
-
-    html_output += '</table></body></html>'
+    html_output += '</body></html>'
 
     return html_output
 
