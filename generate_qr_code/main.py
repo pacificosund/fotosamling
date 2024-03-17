@@ -11,8 +11,11 @@ from datetime import datetime
 
 now = datetime.now()
 
-bucket_name = os.environ.get('BUCKET_NAME')
 function_url = os.environ.get('FUNCTION_URL')
+location = os.environ.get('LOCATION')
+src_bucket = os.environ.get('SRC_BUCKET')
+src_blob = os.environ.get('SRC_BLOB')
+
 
 @functions_framework.http
 def generate_qrcode(request):
@@ -21,16 +24,26 @@ def generate_qrcode(request):
     
     # Create prefix
     datetime_string = now.strftime('%Y-%m-%d-%H-%M-%S')
-    random = str(uuid.uuid4())
-    link_prefix = f'{random}'
-    bucket_prefix = f'{link_prefix}/{datetime_string}'
+    bucket_name = str(uuid.uuid4())
+    #link_prefix = f'{datetime_string}'
+    blob_prefix = f'check_back_soon'
     storage_client = Client()
     bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(bucket_prefix)
-    blob.upload_from_file(BytesIO())
-    link = f'{function_url}?bucket_name={bucket_name}&prefix={link_prefix}'
+    bucket.location = location
+    bucket = storage_client.create_bucket(bucket)
+    #bucket.iam_configuration.uniform_bucket_level_access_enabled = True
+    #bucket.patch()
+    bucket.acl.all().grant_read()
+    bucket.acl.save()
+    #acl = [{'role': 'STORAGE_OBJECT_VIEWER', 'entity': 'allUsers'}]
+    #bucket.acl.save(acl=acl)
+    blob = bucket.blob(blob_prefix)
+    bucket_source = storage_client.bucket(src_bucket)
+    blob_source = bucket_source.blob(src_blob)
+    bucket_source.copy_blob(blob_source, bucket, datetime_string)
+    #blob.upload_from_file(BytesIO())
+    link = f'{function_url}?bucket_name={bucket_name}'
     
-    # 
     # Generate QR code
     qr = qrcode.QRCode(
         version=1,
@@ -56,7 +69,7 @@ def generate_qrcode(request):
                 <head>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-                    <title>Daily Images</title>
+                    <title>See your photos here in 24 hours!</title>
                 </head>
                 <body>
                 '''
