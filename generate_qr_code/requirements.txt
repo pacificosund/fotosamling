@@ -1,5 +1,6 @@
 functions-framework==3.*
 qrcode
-pillow
 flask
+pillow
 google-cloud-storage
+google-cloud-iam

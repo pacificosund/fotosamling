@@ -1,12 +1,12 @@
 import functions_framework
 import qrcode
-from io import BytesIO
 from PIL import Image
-import flask
+from io import BytesIO
 import base64
 import uuid
 import os
-from google.cloud.storage import Client
+from google.cloud import storage
+#from google.cloud import iam_v2
 from datetime import datetime
 
 now = datetime.now()
@@ -24,19 +24,29 @@ def generate_qrcode(request):
     
     # Create prefix
     datetime_string = now.strftime('%Y-%m-%d-%H-%M-%S')
+    datetime_web = now.strftime('%Y-%m-%d %H:%M:%S')
     bucket_name = str(uuid.uuid4())
-    #link_prefix = f'{datetime_string}'
+    
+    # Create bucket
     blob_prefix = f'check_back_soon'
-    storage_client = Client()
+    storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     bucket.location = location
     bucket = storage_client.create_bucket(bucket)
-    #bucket.iam_configuration.uniform_bucket_level_access_enabled = True
-    #bucket.patch()
-    bucket.acl.all().grant_read()
-    bucket.acl.save()
+    bucket.iam_configuration.uniform_bucket_level_access_enabled = True
+    bucket.patch()
+    # iam_client = iam_v2.IAMPolicyClient()
+    # policy = iam_client.get_iam_policy(request={'resource': bucket.name})
+    # binding = policy.bindings.add()
+    # binding.role = 'roles/storage.objectViewer'
+    # binding.members.append('allUsers')
+    # iam_client.set_iam_policy(request={'resource': bucket.name, 'policy': policy})
+    #bucket.acl.all().grant_read()
+    #bucket.acl.save()
     #acl = [{'role': 'STORAGE_OBJECT_VIEWER', 'entity': 'allUsers'}]
     #bucket.acl.save(acl=acl)
+    
+    # Copy default image
     blob = bucket.blob(blob_prefix)
     bucket_source = storage_client.bucket(src_bucket)
     blob_source = bucket_source.blob(src_blob)
@@ -74,13 +84,12 @@ def generate_qrcode(request):
                 <body>
                 '''
 
-    html_output += '<div>'
+    html_output += f'''<div><a href="{data_uri}" download="{data_uri}">
+                    <img src="{data_uri}" width="350px" height="350px" alt="QR code">
+                    </a>
+                    '''
 
-    html_output += f'''<a href="{data_uri}" download="{data_uri}">
-                    <img src="{data_uri}" width="375px" height="375"></a>
-                    '''  # Customize image width
-
-    html_output += f'<div>Generated at: {datetime_string}</div>'
+    html_output += f'<div><a href="{link}">Generated at: {datetime_web}</a></div>'
  
     html_output += '</body></html>'
 
