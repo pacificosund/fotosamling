@@ -74,23 +74,14 @@ def generate_qrcode(request):
                 <body>
                 '''
 
-    html_output += '<table>'
-    row_count = 0
-    images_per_row = 1  # Customize this as needed
+    html_output += '<div>'
 
-    html_output += f'''<td><a href="{data_uri}" download="{data_uri}">
-                        <img src="{data_uri}" width="375px" height="375"></a>
-                        </td>
+    html_output += f'''<a href="{data_uri}" download="{data_uri}">
+                    <img src="{data_uri}" width="375px" height="375"></a>
                     '''  # Customize image width
 
-    row_count += 1
-    if row_count >= images_per_row:
-        html_output += '</tr>'
-        row_count = 0
-
-    if row_count > 0:  # Close the last row if open
-        html_output += '</tr>'
-
-    html_output += '</table></body></html>'
+    html_output += f'<div>Generated at: {datetime_string}</div>'
+ 
+    html_output += '</body></html>'
 
     return html_output
