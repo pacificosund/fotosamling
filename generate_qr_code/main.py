@@ -7,15 +7,17 @@ import uuid
 import os
 from google.cloud import storage
 #from google.cloud import iam_v2
-from datetime import datetime
-
-now = datetime.now()
+from datetime import datetime, timezone
+import logging
 
 function_url = os.environ.get('FUNCTION_URL')
 location = os.environ.get('LOCATION')
 src_bucket = os.environ.get('SRC_BUCKET')
 src_blob = os.environ.get('SRC_BLOB')
+function_timezone = os.environ.get('TIMEZONE')
 
+function_timezone_delta = timezone(datetime.strptime(function_timezone, '%z').utcoffset())
+now = datetime.now(tz=function_timezone_delta)
 
 @functions_framework.http
 def generate_qrcode(request):
@@ -27,11 +29,18 @@ def generate_qrcode(request):
     datetime_web = now.strftime('%Y-%m-%d %H:%M:%S')
     bucket_name = str(uuid.uuid4())
     
-    # Create bucket
-    blob_prefix = f'check_back_soon'
+    # check buckets
     storage_client = storage.Client()
+    buckets = storage_client.list_buckets()
+    num_buckets = len(list(buckets))
+    if num_buckets > 20:
+        logging.error("Too many blobs in the bucket")
+        return 'Too many blobs. Please try again later., 400'
     bucket = storage_client.bucket(bucket_name)
     bucket.location = location
+
+    # Create bucket
+    blob = bucket.blob(datetime_string)
     bucket = storage_client.create_bucket(bucket)
     bucket.iam_configuration.uniform_bucket_level_access_enabled = True
     bucket.patch()
@@ -47,7 +56,7 @@ def generate_qrcode(request):
     #bucket.acl.save(acl=acl)
     
     # Copy default image
-    blob = bucket.blob(blob_prefix)
+ 
     bucket_source = storage_client.bucket(src_bucket)
     blob_source = bucket_source.blob(src_blob)
     bucket_source.copy_blob(blob_source, bucket, datetime_string)
