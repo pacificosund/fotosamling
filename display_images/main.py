@@ -1,4 +1,5 @@
 from google.cloud import storage
+import requests
 
 def display_images(request):
     # Extract bucket and prefix from request (consider adding validation)
@@ -26,14 +27,23 @@ def display_images(request):
                 </head>
                 <body>
                 '''
-
     for blob in blobs:
         public_url = blob.public_url
-        html_output += f'''<div><a href="{public_url}" download="{blob.name}" align="center">
-                            <p align="center">{blob.name}</p>
-                            <img src="{public_url}" width="200" alt="Check back soon!"></a>
-                            </div>
-                        '''  
+        try:
+            response = requests.head(public_url)
+            if response.status_code == 200:
+                html_output += f'''<div><a href="{public_url}" download="{blob.name}" align="center">
+                                    <p align="center">{blob.name}</p>
+                                    <img src="{public_url}" width="200" alt="Check back soon!"></a>
+                                    </div>
+                                '''
+            else:
+                html_output += f'''<div><h1 align="center">Check back soon!
+                    </div>
+                '''
+        except requests.exceptions.RequestException:
+            html_output += f'''<div><h1 align="center">Check back soon!
+            '''  
 
     html_output += '</body></html>'
 
