@@ -12,8 +12,6 @@ import logging
 
 function_url = os.environ.get('FUNCTION_URL')
 location = os.environ.get('LOCATION')
-src_bucket = os.environ.get('SRC_BUCKET')
-src_blob = os.environ.get('SRC_BLOB')
 function_timezone = os.environ.get('TIMEZONE')
 
 function_timezone_delta = timezone(datetime.strptime(function_timezone, '%z').utcoffset())
@@ -29,7 +27,7 @@ def generate_qrcode(request):
     datetime_web = now.strftime('%Y-%m-%d %H:%M:%S')
     bucket_name = str(uuid.uuid4())
     
-    # check buckets
+    # Ensure that too many buckets haven't been created
     storage_client = storage.Client()
     buckets = storage_client.list_buckets()
     num_buckets = len(list(buckets))
@@ -54,12 +52,7 @@ def generate_qrcode(request):
     #bucket.acl.save()
     #acl = [{'role': 'STORAGE_OBJECT_VIEWER', 'entity': 'allUsers'}]
     #bucket.acl.save(acl=acl)
-    
-    # Copy default image
- 
-    bucket_source = storage_client.bucket(src_bucket)
-    blob_source = bucket_source.blob(src_blob)
-    bucket_source.copy_blob(blob_source, bucket, datetime_string)
+   
     #blob.upload_from_file(BytesIO())
     link = f'{function_url}?bucket_name={bucket_name}'
     
